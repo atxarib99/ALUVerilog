@@ -1,6 +1,35 @@
 //I am using iVerilog, downloaded from http://bleyer.org/icarus/
 //For OSX we are using iVerilog, downloaded from MacPorts
 
+//multiplication circuit
+module Mult_full(a, b, c);
+   //define inputs 
+   input [1:0] a, b;
+
+   //define outputs
+   output [3:0] c;
+
+   //develop circuitry for outputs
+    assign c[0] = (a[0] & b[0]);
+    assign c[1] = ((a[0] & b[1]) ^ (a[1] & b[0]));
+    assign c[2] = (((a[0] & b[1]) & (a[1] & b[0])) ^ (a[1] & b[1]));
+    assign c[3] = (((a[0] & b[1]) & a[1] & b[0]) & (a[1] & b[1]));
+
+endmodule
+
+//divide circuit
+module Divide_full(a, b, c);
+   //define inputs
+   input [1:0] a, b;
+   //define outputs
+   output [1:0] c;
+
+   //because division is hard we use /
+   assign c[0] = ((!b[1] & a[0]) | (a[1] & a[0]) | (!b[0] & a[1]));
+   assign c[1] = (!b[1] & a[1]);
+   
+endmodule
+
 //Multiplexer
 module Mux4(a3, a2, a1, a0, s, b);
 	parameter k = 1 ;
