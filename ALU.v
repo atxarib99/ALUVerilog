@@ -30,16 +30,16 @@ module Divide_full(a, b, c);
    
 endmodule
 
+
 //OR
 module my_OR(input a, b, output c);
    //apply OR function and store in output 
    or (c, a, b);
-
 endmodule
 
 //NOR
 module my_NOR(input a, b, output c);
-   //apply OR function and store in output 
+   //apply NOR function and store in output 
    nor (c, a, b);
 endmodule
 
