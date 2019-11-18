@@ -1,6 +1,48 @@
 //I am using iVerilog, downloaded from http://bleyer.org/icarus/
 //For OSX we are using iVerilog, downloaded from MacPorts
 
+//multiplication circuit
+module Mult_full(a, b, c);
+   //define inputs 
+   input [1:0] a, b;
+
+   //define outputs
+   output [3:0] c;
+
+   //develop circuitry for outputs
+    assign c[0] = (a[0] & b[0]);
+    assign c[1] = ((a[0] & b[1]) ^ (a[1] & b[0]));
+    assign c[2] = (((a[0] & b[1]) & (a[1] & b[0])) ^ (a[1] & b[1]));
+    assign c[3] = (((a[0] & b[1]) & a[1] & b[0]) & (a[1] & b[1]));
+
+endmodule
+
+//divide circuit
+module Divide_full(a, b, c);
+   //define inputs
+   input [1:0] a, b;
+   //define outputs
+   output [1:0] c;
+
+   //because division is hard we use /
+   assign c[0] = ((!b[1] & a[0]) | (a[1] & a[0]) | (!b[0] & a[1]));
+   assign c[1] = (!b[1] & a[1]);
+   
+endmodule
+
+//OR
+module my_OR(input a, b, output c);
+   //apply OR function and store in output 
+   or (c, a, b);
+
+endmodule
+
+//NOR
+module my_NOR(input a, b, output c);
+   //apply OR function and store in output 
+   nor (c, a, b);
+endmodule
+
 //Multiplexer
 module Mux4(a3, a2, a1, a0, s, b);
 	parameter k = 1 ;
@@ -55,4 +97,4 @@ module Add_rca_8 (input [7:0] a, b, input c_in, output c_out, output [7:0] sum);
    wire c_in4;
    Add_rca_4 M0 (a[3:0], b[3:0], c_in, c_in4, sum[3:0]);
    Add_rca_4 M1 (a[7:4], b[7:4], c_in4, c_out, sum[7:4]);
-endmodul
+endmodule
