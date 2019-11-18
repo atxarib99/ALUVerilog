@@ -30,6 +30,19 @@ module Divide_full(a, b, c);
    
 endmodule
 
+
+//OR
+module my_OR(input a, b, output c);
+   //apply OR function and store in output 
+   or (c, a, b);
+endmodule
+
+//NOR
+module my_NOR(input a, b, output c);
+   //apply NOR function and store in output 
+   nor (c, a, b);
+endmodule
+
 //Multiplexer
 module Mux4(a3, a2, a1, a0, s, b);
 	parameter k = 1 ;
