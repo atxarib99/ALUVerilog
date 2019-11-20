@@ -43,9 +43,9 @@ module my_NOR(input a, b, output c);
    nor (c, a, b);
 endmodule
 
-//Multiplexer
+//Multiplexer (4 channel)
 module Mux4(a3, a2, a1, a0, s, b);
-	parameter k = 1 ;
+	parameter k = 16 ;
 	input [k-1:0] a3, a2, a1, a0;  // inputs
 	input [3:0]   s; // one-hot select
 	output[k-1:0] b;
@@ -53,6 +53,16 @@ module Mux4(a3, a2, a1, a0, s, b);
                 ({k{s[2]}} & a2) | 
                 ({k{s[1]}} & a1) |
                 ({k{s[0]}} & a0) ;
+endmodule
+
+//Multiplexer (2 channel)
+module Mux2(a1, a0, s, b);
+	parameter k = 16;
+	input [k-1:0] a1, a0;
+	input [1:0] s;
+	output[k-1:0] b;
+	assign b = ({k{s[1]}} & a1) |
+				({k{s[0]}} & a0);
 endmodule
 
 //D-Flip-Flop
@@ -97,4 +107,83 @@ module Add_rca_8 (input [7:0] a, b, input c_in, output c_out, output [7:0] sum);
    wire c_in4;
    Add_rca_4 M0 (a[3:0], b[3:0], c_in, c_in4, sum[3:0]);
    Add_rca_4 M1 (a[7:4], b[7:4], c_in4, c_out, sum[7:4]);
+endmodule
+
+//-----------------------------------------------------------------------------
+module Xor(a, b, c);
+	input [15:0] a;
+	input [15:0] b;
+	output [15:0] c;
+	assign c = a ^ b;
+endmodule
+
+//-----------------------------------------------------------------------------
+module Xnor(a, b, c);
+	input [15:0] a;
+	input [15:0] b;
+	output [15:0] c;
+	assign c = ~(a ^ b);
+endmodule
+
+//-----------------------------------------------------------------------------
+module Shift_right(in, amt, out);
+	input [15:0] in;
+	input [4:0] amt;
+	output [15:0] out;
+	wire [15:0] out;
+	assign out = in >> amt;
+endmodule
+
+module Input_registers(clk, a_in, b_in, acc_val, a_s, b_s, a_out, b_out);
+	parameter n = 16;
+	
+	input clk;
+	
+	//inputs and outputs to the entire section
+	input [n-1:0] a_in, b_in, acc_val;	//a&b and current accumulator value
+	input [1:0] a_s;		//2 bit one-hot selector
+	input [3:0] b_s;		//4 bit one-hot selector
+	output [n-1:0] a_out, b_out;
+	
+	
+	//wires
+	wire [n-1:0] muxA_out;
+	wire [n-1:0] muxB_out;
+	wire [n-1:0] a_out, b_out;
+	
+	//module instantiations for the two muxes and two d flip-flops
+	Mux2 #(n) muxA(a_in, a_out, a_s, muxA_out);
+	Mux4 #(n) muxB(16'b0000000000000000, b_in, acc_val, b_out, b_s, muxB_out);
+	DFF  #(n) selectedA(clk, muxA_out, a_out);
+	DFF  #(n) selectedB(clk, muxB_out, b_out);
+endmodule
+
+//-----------------------------------------------------------------------------
+module testbench();
+
+	reg [15:0] one;
+	reg [15:0] two;
+	reg [4:0] three;
+	wire [15:0] out1;
+	wire [15:0] out2;
+	wire [15:0] out3;
+	
+	Xor testXor(one, two, out1);
+	Xnor testXnor(one, two, out2);
+	Shift_right testShiftRight(one, three, out3);
+	
+	initial begin
+		
+		one = 16'b0000000011111111;
+		two = 16'b0000111100001111;
+		three = 4'b0111;
+		
+		#10
+		$display("    input 1     |     input 2    |     xor out     |    xnor out   |    shift out   ");
+		$display("%15b|%15b|%15b|%15b|%15b", one, two, out1, out2, out3);
+		
+		#10
+		$finish;
+		
+	end
 endmodule
