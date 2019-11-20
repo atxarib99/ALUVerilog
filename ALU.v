@@ -4,29 +4,34 @@
 //multiplication circuit
 module Mult_full(a, b, c);
    //define inputs 
-   input [1:0] a, b;
+   input [15:0] a, b;
 
    //define outputs
-   output [3:0] c;
+   output [15:0] c;
 
    //develop circuitry for outputs
-    assign c[0] = (a[0] & b[0]);
-    assign c[1] = ((a[0] & b[1]) ^ (a[1] & b[0]));
-    assign c[2] = (((a[0] & b[1]) & (a[1] & b[0])) ^ (a[1] & b[1]));
-    assign c[3] = (((a[0] & b[1]) & a[1] & b[0]) & (a[1] & b[1]));
+   //  assign c[0] = (a[0] & b[0]);
+   //  assign c[1] = ((a[0] & b[1]) ^ (a[1] & b[0]));
+   //  assign c[2] = (((a[0] & b[1]) & (a[1] & b[0])) ^ (a[1] & b[1]));
+   //  assign c[3] = (((a[0] & b[1]) & a[1] & b[0]) & (a[1] & b[1]));
+
+    assign c = a * b;
 
 endmodule
 
 //divide circuit
 module Divide_full(a, b, c);
    //define inputs
-   input [1:0] a, b;
+   input [15:0] a, b;
+   input [2:0] m;
    //define outputs
-   output [1:0] c;
+   output [15:0] c;
 
    //because division is hard we use /
-   assign c[0] = ((!b[1] & a[0]) | (a[1] & a[0]) | (!b[0] & a[1]));
-   assign c[1] = (!b[1] & a[1]);
+   // assign c[0] = ((!b[1] & a[0]) | (a[1] & a[0]) | (!b[0] & a[1]));
+   // assign c[1] = (!b[1] & a[1]);
+   assign c = a / b;
+
    
 endmodule
 
@@ -84,4 +89,102 @@ module Add_rca_8 (input [7:0] a, b, input c_in, output c_out, output [7:0] sum);
    wire c_in4;
    Add_rca_4 M0 (a[3:0], b[3:0], c_in, c_in4, sum[3:0]);
    Add_rca_4 M1 (a[7:4], b[7:4], c_in4, c_out, sum[7:4]);
+endmodule
+
+module AND16(x,y,z);
+    input[15:0] x,y;          
+    output[15:0] z;    
+ 
+    assign z = x & y;
+endmodule
+ 
+module NAND16(x,y,z);
+    input[15:0] x,y;          
+    output[15:0] z;    
+   
+    assign z = ~(x & y);
+endmodule
+ 
+module SHIFT_LEFT(shift, in, out);
+    input[4:0] shift;
+    input[15:0] in;
+    output[15:0] out;
+ 
+    assign out = in << shift;
+endmodule
+ 
+module SHIFT_RIGHT(shift, in, out);
+    input[4:0] shift;
+    input[15:0] in;
+    output[15:0] out;
+ 
+    assign out = in >> shift;
+endmodule
+ 
+module testbench();
+ 
+    // Inputs
+    reg[15:0]       in;
+    reg[4:0]        shift;
+    reg             clk;
+    reg[15:0]           x;
+    reg[15:0]           y;
+    reg[1:0]            a;
+    reg[1:0]            b;
+    wire[3:0]           out;
+    wire[15:0]          andres;
+    wire[15:0]          nandres;
+   
+    // Output from module
+    wire[15:0]      shifted;
+   
+    SHIFT_LEFT sL (shift, in, shifted);
+    AND16 anding(x,y, andres);
+    NAND16 nanding(x,y, nandres);
+    initial begin
+       
+        a = 3;
+        b = 3;
+        #10
+        $display("mult: %1b", out);
+       
+       
+       x = 65535;
+       y = 0;
+       #10
+       $display ("x:    %1b", x);
+       $display ("y:    %1b", y);
+       $display ("AND:  %1b", andres);
+       $display ("NAND: %1b", nandres);
+       
+        in = 11;
+        shift = 5;
+        #10 // Wait
+       
+        $display ("Input:   %1b", in);
+        $display ("Left Shift: ", shift);
+        $display ("Shifted: %1b", shifted);
+       
+        in = shifted;
+        shift = 2;
+        #10
+        $display ("Left Shift: ", shift);
+        $display ("Shifted: %1b", shifted);
+        #10
+        $finish;
+    end
+   
+    //---------------------------------------------
+    // Clock Control
+    //---------------------------------------------
+    initial begin
+      forever
+        begin
+            #5
+            clk = 0 ;
+            #5
+            clk = 1 ;
+        end
+    end
+   
 endmodule
