@@ -1,5 +1,7 @@
 //I am using iVerilog, downloaded from http://bleyer.org/icarus/
 //For OSX we are using iVerilog, downloaded from MacPorts
+// iverilog -o alu.vvp ALU.v
+// vvp alu.vvp
 
 //multiplication circuit
 module Mult_full(a, b, c);
@@ -211,15 +213,21 @@ module testbench();
    
 
 //OR
-module my_OR(input a, b, output c);
-   //apply OR function and store in output 
-   or (c, a, b);
+module my_OR(a, b, output c);
+	parameter n = 16;
+	input[n-1:0] a, b;
+	output[n-1]:0] c;
+	
+	assign c = a | b;
 endmodule
 
 //NOR
 module my_NOR(input a, b, output c);
-   //apply NOR function and store in output 
-   nor (c, a, b);
+   parameter n = 16;
+	input[n-1:0] a, b;
+	output[n-1]:0] c;
+	
+	assign c = ~(a | b);
 endmodule
 
 //Multiplexer (2 channel)
