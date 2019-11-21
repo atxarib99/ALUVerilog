@@ -44,7 +44,6 @@ module SUB (input [15:0] a, b, output reg [31:0] out);
 		else
 			out = a - b;
 	end
-
 endmodule
 
 module MULTIPLY(x, y, mult_out);
@@ -131,6 +130,7 @@ module MUX2(a1, a0, s, b);
 	input [15:0] a1, a0;
 	input [1:0] s;
 	output[15:0] b;
+	
 	assign b = ({k{s[1]}} & a1) |
 				({k{s[0]}} & a0);
 endmodule
@@ -268,14 +268,12 @@ module CURRENT_OP(op, operation);
 	end
 endmodule
 
-module testbench();
- 
-	// Combinational Logic Input
-	reg             clk;
-	reg             reset;
-	reg[1:0]		muxAInput;
-	reg[3:0]		muxBInput;
-	reg[3:0]		op;
+module ALU(clk, reset, muxAInput, muxBInput, op, acc_val);
+	input             clk;
+	input             reset;
+	input[1:0]		muxAInput;
+	input[3:0]		muxBInput;
+	input[3:0]		op;
 	reg[15:0]       a;
 	reg[15:0]       b;
 	wire [8*12:1] 	operation;
@@ -302,7 +300,7 @@ module testbench();
 	wire[31:0] 		shiftL_out;
 	wire[31:0] 		shiftR_out;
 	wire[31:0] 		mult_out;
-	wire[31:0] 		acc_val;
+	output wire[31:0] 		acc_val;
    
 	COMBINATIONAL_LOGIC CL(muxAInput, muxBInput, op, reset, muxASelector, muxBSelector, opcode);
 	CURRENT_OP currentOP(op, operation);
@@ -316,8 +314,6 @@ module testbench();
     MUX4 muxB(16'b0, b, acc_val[15:0], b_out, muxBSelector, muxB_out);
     DFF16  selectedA(clk, muxA_out, a_out);
     DFF16  selectedB(clk, muxB_out, b_out);
-
-  //a_out is output from DFF that should be used for modules
 
 	ADD adder(a_out, b_out, 1'b0, add_out);
 	SUB subber(a_out, b_out, sub_out);
@@ -334,6 +330,25 @@ module testbench();
     MULTIPLY multiplier(a_out, b_out, mult_out);
 	
 	MUX16 outputResult(add_out, sub_out, mult_out, div_out, and_out, or_out, xor_out, nt_out, nand_out, nor_out, xnor_out, shiftL_out, shiftR_out, opcode, acc_val);
+endmodule
+
+module testbench();
+ 
+	reg             clk;
+	reg             reset;
+	reg[1:0]		muxAInput;
+	reg[3:0]		muxBInput;
+	reg[3:0]		op;
+	wire[31:0]		out;
+	wire[1:0] 		print;
+	 
+	//---------------------------------------------
+	// Breadboard
+	//---------------------------------------------  
+	ALU breadboard(clk, reset, muxAInput, muxBInput, op, out);
+
+	// Combinational Logic Input
+	
 
 	//---------------------------------------------
 	// Clock Control
@@ -351,43 +366,43 @@ module testbench();
 	//---------------------------------------------
 	// Next State
 	//---------------------------------------------
-	always @(acc_val)
+	always @(out)
 	begin
-		if (^acc_val == 1'b0 || ^acc_val == 1'b1)
-			nextState = "Ready";
+		if (^out == 1'b0 || ^out == 1'b1)
+			breadboard.nextState = "Ready";
 		else begin
-			nextState = "Error";
+			breadboard.nextState = "Error";
 		end
 	end
 
 	always @(posedge clk)
 	begin
-		if (nextState == "")
-			currentState = "Ready";
+		if (breadboard.nextState == "")
+			breadboard.currentState = "Ready";
 		else
-			currentState = nextState;
+			breadboard.currentState = breadboard.nextState;
 	end
 
 	initial begin 
 		#1
 		reset = 0;
-		a = 6;
-		b = 3;
+		breadboard.a = 5;
+		breadboard.b = 4;
 		muxAInput = 2'b10;
 		muxBInput = 4'b0100;
-		
+				
 		#10
 		$display("NUM1\t\t\t||NUM2\t\t\t||Operation\t\t||Current State ||Output\t\t\t\t\t||Next State");
-        $monitor("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s", a_out, a_out, b_out, b_out, op, operation, currentState, acc_val, acc_val, nextState);
+        //$monitor("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 		
 		
+		#10
 		op = 0;
+		$monitor("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 		#10
 		op = 1;
 		#10
 		op = 2;
-		#10
-		b = 0;
 		#10
 		op = 3;
 		#10
@@ -407,6 +422,9 @@ module testbench();
 		#10
 		op = 11;
 		#10
+		breadboard.a = 1;
+		muxAInput = 2'b01;
+		#10
 		op = 12;
 		#10
 		op = 13;
@@ -414,7 +432,7 @@ module testbench();
 		op = 14;
 		#10
 		op = 15;
-		#10		
+		
 		$finish;
 	end
 
