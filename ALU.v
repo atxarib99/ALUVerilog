@@ -37,6 +37,16 @@ module ADD (input [15:0] a, b, input c_in, output [31:0] sum);
    assign sum[31:17] = 0;
 endmodule
 
+module SUB (input [15:0] a, b, output reg [31:0] out);
+	always @(a, b) begin
+		if (b > a)
+			out = 32'bX;
+		else
+			out = a - b;
+	end
+
+endmodule
+
 module MULTIPLY(x, y, mult_out);
 	input [15:0] x, y;
 	output [31:0] mult_out;
@@ -310,6 +320,7 @@ module testbench();
   //a_out is output from DFF that should be used for modules
 
 	ADD adder(a_out, b_out, 1'b0, add_out);
+	SUB subber(a_out, b_out, sub_out);
 	DIVIDE divider(a_out, b_out, div_out);
 	AND ander(a_out, b_out, and_out);
 	OR orer(a_out, b_out, or_out);
