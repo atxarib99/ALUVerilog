@@ -206,10 +206,10 @@ module LEFT_ARBITER (d, r, m);
 
 endmodule
 
-module MUX16(add, sub, mult, div, andd, orr, xorr, nt, nandd, norr, xnorr, shiftL, shiftR, err, select, out);
+module MUX16(add, sub, mult, div, andd, orr, xorr, nt, nandd, norr, xnorr, shiftL, shiftR, select, out);
 	parameter n = 32;
 	
-	input[31:0] 	mult, nt, nandd, add, sub, div, andd, orr, xorr, norr, xnorr, shiftL, shiftR, err;
+	input[31:0] 	mult, nt, nandd, add, sub, div, andd, orr, xorr, norr, xnorr, shiftL, shiftR;
 	input[15:0] 	select;
 	output[31:0] 	out;
 	
@@ -227,33 +227,32 @@ module MUX16(add, sub, mult, div, andd, orr, xorr, nt, nandd, norr, xnorr, shift
 				({n{select[11]}} & shiftL) |
 				({n{select[12]}} & shiftR) |
 				({n{select[13]}} & out) |
-				({n{select[14]}} & err) |
-                ({n{select[15]}} & 0);
+                ({n{select[14]}} & 0);
 endmodule
 
-module CURRENT_OP(opcode, operation);
-	input[15:0]		opcode;
+module CURRENT_OP(op, operation);
+	input[3:0]		op;
 	output reg [8*12:1] 	operation;
 	
-	always @(opcode)
+	always @(op)
     begin
-        case(opcode)
-        1 : operation = "Add";
-        2 : operation = "Subtract";
-        3 : operation = "Multiply";
-        4 : operation = "Divide";
-        5 : operation = "AND";
-        6 : operation = "OR";
-        7 : operation = "XOR";
-        8 : operation = "NOT";
-        9 : operation = "NAND";
-        10 : operation = "NOR";
-        11 : operation = "XNOR";
-        12 : operation = "Shift Left";
-        13 : operation = "Shift Right";
-        14 : operation = "No Op";
-        15 : operation = "Error";
-        15 : operation = "Reset";
+        case(op)
+        0: operation = "Add";
+        1: operation = "Subtract";
+        2: operation = "Multiply";
+        3: operation = "Divide";
+        4: operation = "AND";
+        5: operation = "OR";
+        6: operation = "XOR";
+        7: operation = "NOT";
+        8: operation = "NAND";
+        9: operation = "NOR";
+        10: operation = "XNOR";
+        11: operation = "Shift_L";
+        12: operation = "Shift_R";
+        13: operation = "No Op";
+        14: operation = "Error";
+        15: operation = "Reset";
         default : operation = "WHAT";
         endcase
 	end
@@ -270,6 +269,8 @@ module testbench();
 	reg[15:0]       a;
 	reg[15:0]       b;
 	wire [8*12:1] 	operation;
+	reg [8*6:1] 	currentState = ""; // "Ready" or "Error"
+	reg [8*6:1] 	nextState = "";    //    ^    or    ^
 	
 	// Combinational Logic Output
 	wire[1:0]		muxASelector;
@@ -290,12 +291,11 @@ module testbench();
 	wire[31:0] 		xnor_out;
 	wire[31:0] 		shiftL_out;
 	wire[31:0] 		shiftR_out;
-	wire[31:0] 		err_out;
 	wire[31:0] 		mult_out;
 	wire[31:0] 		acc_val;
    
 	COMBINATIONAL_LOGIC CL(muxAInput, muxBInput, op, reset, muxASelector, muxBSelector, opcode);
-	CURRENT_OP currentOP(opcode, operation);
+	CURRENT_OP currentOP(op, operation);
 	//wires for input -> mux -> dff
     wire [15:0] muxA_out;
     wire [15:0] muxB_out;
@@ -322,27 +322,8 @@ module testbench();
     SHIFT_RIGHT rightShifter(a_out, b_out, shiftR_out);
     MULTIPLY multiplier(a_out, b_out, mult_out);
 	
-	MUX16 outputResult(add_out, sub_out, mult_out, div_out, and_out, or_out, xor_out, nt_out, nand_out, nor_out, xnor_out, shiftL_out, shiftR_out, err_out, opcode, acc_val);
+	MUX16 outputResult(add_out, sub_out, mult_out, div_out, and_out, or_out, xor_out, nt_out, nand_out, nor_out, xnor_out, shiftL_out, shiftR_out, opcode, acc_val);
 
-	initial begin 
-		#1
-		
-		reset = 0;
-		a = 65535;
-		b = 1;
-		muxAInput = 2'b10;
-		muxBInput = 4'b0100;
-		
-		op = 0;
-		
-		#10
-		$display("NUM1\t\t\t\t||NUM2\t\t\t||Operation\t\t||Current State||Output\t\t\t\t\t\t||Next State");
-        $monitor("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||Current State||%b (%1d)\t||Next State", a_out, a_out, b_out, b_out, op, operation, acc_val, acc_val);
-		
-		
-		$finish;
-	end
-   
 	//---------------------------------------------
 	// Clock Control
 	//---------------------------------------------
@@ -354,6 +335,76 @@ module testbench();
 			#5
 			clk = 1 ;
 		end
+	end
+
+	//---------------------------------------------
+	// Next State
+	//---------------------------------------------
+	always @(acc_val)
+	begin
+		if (^acc_val == 1'b0 || ^acc_val == 1'b1)
+			nextState = "Ready";
+		else begin
+			nextState = "Error";
+		end
+	end
+
+	always @(posedge clk)
+	begin
+		if (nextState == "")
+			currentState = "Ready";
+		else
+			currentState = nextState;
+	end
+
+	initial begin 
+		#1
+		reset = 0;
+		a = 6;
+		b = 3;
+		muxAInput = 2'b10;
+		muxBInput = 4'b0100;
+		
+		#10
+		$display("NUM1\t\t\t||NUM2\t\t\t||Operation\t\t||Current State ||Output\t\t\t\t\t||Next State");
+        $monitor("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s", a_out, a_out, b_out, b_out, op, operation, currentState, acc_val, acc_val, nextState);
+		
+		
+		op = 0;
+		#10
+		op = 1;
+		#10
+		op = 2;
+		#10
+		b = 0;
+		#10
+		op = 3;
+		#10
+		op = 4;
+		#10
+		op = 5;
+		#10
+		op = 6;
+		#10
+		op = 7;
+		#10
+		op = 8;
+		#10
+		op = 9;
+		#10
+		op = 10;
+		#10
+		op = 11;
+		#10
+		op = 12;
+		#10
+		op = 13;
+		#10
+		op = 14;
+		#10
+		op = 15;
+		#10		
+		$finish;
 	end
 
 endmodule
