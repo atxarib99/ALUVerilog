@@ -5,36 +5,35 @@
 
 //multiplication circuit
 module Mult_full(a, b, c);
-   //define inputs 
-   input [15:0] a, b;
+	//define inputs 
+	input [15:0] a, b;
 
-   //define outputs
-   output [15:0] c;
+	//define outputs
+	output [15:0] c;
 
-   //develop circuitry for outputs
-   //  assign c[0] = (a[0] & b[0]);
-   //  assign c[1] = ((a[0] & b[1]) ^ (a[1] & b[0]));
-   //  assign c[2] = (((a[0] & b[1]) & (a[1] & b[0])) ^ (a[1] & b[1]));
-   //  assign c[3] = (((a[0] & b[1]) & a[1] & b[0]) & (a[1] & b[1]));
+	//develop circuitry for outputs
+	//  assign c[0] = (a[0] & b[0]);
+	//  assign c[1] = ((a[0] & b[1]) ^ (a[1] & b[0]));
+	//  assign c[2] = (((a[0] & b[1]) & (a[1] & b[0])) ^ (a[1] & b[1]));
+	//  assign c[3] = (((a[0] & b[1]) & a[1] & b[0]) & (a[1] & b[1]));
 
-    assign c = a * b;
+	assign c = a * b;
 
 endmodule
 
 //divide circuit
 module Divide_full(a, b, c);
-   //define inputs
-   input [15:0] a, b;
-   input [2:0] m;
-   //define outputs
-   output [15:0] c;
+	//define inputs
+	input [15:0] a, b;
+	input [2:0] m;
+	//define outputs
+	output [15:0] c;
 
-   //because division is hard we use /
-   // assign c[0] = ((!b[1] & a[0]) | (a[1] & a[0]) | (!b[0] & a[1]));
-   // assign c[1] = (!b[1] & a[1]);
-   assign c = a / b;
+	//because division is hard we use /
+	// assign c[0] = ((!b[1] & a[0]) | (a[1] & a[0]) | (!b[0] & a[1]));
+	// assign c[1] = (!b[1] & a[1]);
+	assign c = a / b;
 
-   
 endmodule
 
 //Multiplexer
@@ -44,9 +43,9 @@ module Mux4(a3, a2, a1, a0, s, b);
 	input [3:0]   s; // one-hot select
 	output[k-1:0] b;
 	assign b = ({k{s[3]}} & a3) | 
-                ({k{s[2]}} & a2) | 
-                ({k{s[1]}} & a1) |
-                ({k{s[0]}} & a0) ;
+				({k{s[2]}} & a2) | 
+				({k{s[1]}} & a1) |
+				({k{s[0]}} & a0) ;
 endmodule
 
 //D-Flip-Flop
@@ -68,64 +67,64 @@ endmodule
 
 //ADDERS
 module Add_half (input a, b, output c_out, sum);
-   xor G1(sum, a, b);	// Gate instance names are optional
-   and G2(c_out, a, b);
+	xor G1(sum, a, b);	// Gate instance names are optional
+	and G2(c_out, a, b);
 endmodule
 //-----------------------------------------------------------------------------
 module Add_full (input a, b, c_in, output c_out, sum);	 
-   wire w1, w2, w3;				// w1 is c_out; w2 is sum
-   Add_half M1 (a, b, w1, w2);
-   Add_half M0 (w2, c_in, w3, sum);
-   or (c_out, w1, w3);
+	wire w1, w2, w3;				// w1 is c_out; w2 is sum
+	Add_half M1 (a, b, w1, w2);
+	Add_half M0 (w2, c_in, w3, sum);
+	or (c_out, w1, w3);
 endmodule
 //-----------------------------------------------------------------------------
 module Add_rca_4 (input [3:0] a, b, input c_in, output c_out, output [3:0] sum);
-   wire c_in1, c_in2, c_in3, c_in4;			// Intermediate carries
-   Add_full M0 (a[0], b[0], c_in,  c_in1, sum[0]);
-   Add_full M1 (a[1], b[1], c_in1, c_in2, sum[1]);
-   Add_full M2 (a[2], b[2], c_in2, c_in3, sum[2]);
-   Add_full M3 (a[3], b[3], c_in3, c_out, sum[3]);
+	wire c_in1, c_in2, c_in3, c_in4;			// Intermediate carries
+	Add_full M0 (a[0], b[0], c_in,  c_in1, sum[0]);
+	Add_full M1 (a[1], b[1], c_in1, c_in2, sum[1]);
+	Add_full M2 (a[2], b[2], c_in2, c_in3, sum[2]);
+	Add_full M3 (a[3], b[3], c_in3, c_out, sum[3]);
 endmodule
 //-----------------------------------------------------------------------------
 module Add_rca_8 (input [7:0] a, b, input c_in, output c_out, output [7:0] sum);
-   wire c_in4;
-   Add_rca_4 M0 (a[3:0], b[3:0], c_in, c_in4, sum[3:0]);
-   Add_rca_4 M1 (a[7:4], b[7:4], c_in4, c_out, sum[7:4]);
+	wire c_in4;
+	Add_rca_4 M0 (a[3:0], b[3:0], c_in, c_in4, sum[3:0]);
+	Add_rca_4 M1 (a[7:4], b[7:4], c_in4, c_out, sum[7:4]);
 endmodule
 
 module AND16(x,y,z);
-    input[15:0] x,y;          
-    output[15:0] z;    
+	input[15:0] x,y;          
+	output[15:0] z;    
  
-    assign z = x & y;
+	assign z = x & y;
 endmodule
  
 module NAND16(x,y,z);
-    input[15:0] x,y;          
-    output[15:0] z;    
+	input[15:0] x,y;          
+	output[15:0] z;    
    
-    assign z = ~(x & y);
+	assign z = ~(x & y);
 endmodule
  
 module SHIFT_LEFT(shift, in, out);
-    input[4:0] shift;
-    input[15:0] in;
-    output[15:0] out;
+	input[4:0] shift;
+	input[15:0] in;
+	output[15:0] out;
  
-    assign out = in << shift;
+	assign out = in << shift;
 endmodule
  
 module SHIFT_RIGHT(shift, in, out);
-    input[4:0] shift;
-    input[15:0] in;
-    output[15:0] out;
+	input[4:0] shift;
+	input[15:0] in;
+	output[15:0] out;
  
-    assign out = in >> shift;
+	assign out = in >> shift;
 endmodule
  
 module testbench();
  
- 	reg [15:0] one;
+	reg [15:0] one;
 	reg [15:0] two;
 	reg [4:0] three;
 	wire [15:0] out1;
@@ -136,80 +135,82 @@ module testbench();
 	Xnor testXnor(one, two, out2);
 	Shift_right testShiftRight(one, three, out3);
 
-    // Inputs
-    reg[15:0]       in;
-    reg[4:0]        shift;
-    reg             clk;
-    reg[15:0]           x;
-    reg[15:0]           y;
-    reg[1:0]            a;
-    reg[1:0]            b;
-    wire[3:0]           out;
-    wire[15:0]          andres;
-    wire[15:0]          nandres;
+	// Inputs
+	reg[15:0]       in;
+	reg[4:0]        shift;
+	reg             clk;
+	reg[15:0]           x;
+	reg[15:0]           y;
+	reg[1:0]            a;
+	reg[1:0]            b;
+	wire[3:0]           out;
+	wire[15:0]          andres;
+	wire[15:0]          nandres;
    
-    // Output from module
-    wire[15:0]      shifted;
+	// Output from module
+	wire[15:0]      shifted;
    
-    SHIFT_LEFT sL (shift, in, shifted);
-    AND16 anding(x,y, andres);
-    NAND16 nanding(x,y, nandres);
-    initial begin
-       
-        a = 3;
-        b = 3;
-        #10
-        $display("mult: %1b", out);
-       
-       
-       x = 65535;
-       y = 0;
-       #10
-       $display ("x:    %1b", x);
-       $display ("y:    %1b", y);
-       $display ("AND:  %1b", andres);
-       $display ("NAND: %1b", nandres);
-       
-        in = 11;
-        shift = 5;
-        #10 // Wait
-       
-        $display ("Input:   %1b", in);
-        $display ("Left Shift: ", shift);
-        $display ("Shifted: %1b", shifted);
-       
-        in = shifted;
-        shift = 2;
-        #10
-        $display ("Left Shift: ", shift);
-        $display ("Shifted: %1b", shifted);
-        #10
-        $finish;
+	SHIFT_LEFT sL (shift, in, shifted);
+	AND16 anding(x,y, andres);
+	NAND16 nanding(x,y, nandres);
+	initial begin
+	   
+		a = 3;
+		b = 3;
+		#10
+		$display("mult: %1b", out);
+	   
+	   
+	   x = 65535;
+	   y = 0;
+	   #10
+	   $display ("x:    %1b", x);
+	   $display ("y:    %1b", y);
+	   $display ("AND:  %1b", andres);
+	   $display ("NAND: %1b", nandres);
+	   
+		in = 11;
+		shift = 5;
+		#10 // Wait
+	   
+		$display ("Input:   %1b", in);
+		$display ("Left Shift: ", shift);
+		$display ("Shifted: %1b", shifted);
+	   
+		in = shifted;
+		shift = 2;
+		#10
+		$display ("Left Shift: ", shift);
+		$display ("Shifted: %1b", shifted);
+		#10
+		$finish;
 
-        one = 16'b0000000011111111;
-         two = 16'b0000111100001111;
-         three = 4'b0111;
-         
-         #10
-         $display("    input 1     |     input 2    |     xor out     |    xnor out   |    shift out   ");
-         $display("%15b|%15b|%15b|%15b|%15b", one, two, out1, out2, out3);
-         
-         #10
-         $finish;
-    end
+		one = 16'b0000000011111111;
+		 two = 16'b0000111100001111;
+		 three = 4'b0111;
+		 
+		 #10
+		 $display("    input 1     |     input 2    |     xor out     |    xnor out   |    shift out   ");
+		 $display("%15b|%15b|%15b|%15b|%15b", one, two, out1, out2, out3);
+		 
+		 #10
+		 $finish;
+	end
    
-    //---------------------------------------------
-    // Clock Control
-    //---------------------------------------------
-    initial begin
-      forever
-        begin
-            #5
-            clk = 0 ;
-            #5
-            clk = 1 ;
-        end
-    end
+	//---------------------------------------------
+	// Clock Control
+	//---------------------------------------------
+	initial begin
+	  forever
+		begin
+			#5
+			clk = 0 ;
+			#5
+			clk = 1 ;
+		end
+	end
+
+endmodule
    
 
 //OR
@@ -217,13 +218,13 @@ module my_OR(a, b, output c);
 	parameter n = 16;
 	input[n-1:0] a, b;
 	output[n-1]:0] c;
-	
+
 	assign c = a | b;
 endmodule
 
 //NOR
 module my_NOR(input a, b, output c);
-   parameter n = 16;
+	parameter n = 16;
 	input[n-1:0] a, b;
 	output[n-1]:0] c;
 	
