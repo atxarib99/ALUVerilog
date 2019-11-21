@@ -4,95 +4,111 @@
 // vvp alu.vvp
 
 //multiplication circuit
-module Mult_full(a, b, c);
-	//define inputs 
-	input [15:0] a, b;
+module MULTIPLY(x, y, mult_out);
+	//define inputs
+	input [15:0] x, y;
 
 	//define outputs
-	output [15:0] c;
+	output [15:0] mult_out;
 
 	//develop circuitry for outputs
-	assign c = a * b;
+	assign mult_out = x * y;
 
 endmodule
 
 //divide circuit
-module Divide_full(a, b, c);
+module DIVIDE(x, y, div_out);
 	//define inputs
-	input [15:0] a, b;
-	input [2:0] m;
+	input [15:0] x, y;
 	//define outputs
-	output [15:0] c;
+	output [15:0] div_out;
 
 	//because division is hard we use /
-	assign c = a / b;
+	assign div_out = x / y;
 
 endmodule
 
 //Multiplexer
-module Mux4(a3, a2, a1, a0, s, b);
-	parameter k = 1 ;
-	input [k-1:0] a3, a2, a1, a0;  // inputs
+module MUX4(a3, a2, a1, a0, s, mux4_out);
+	parameter k = 16;
+	input [15:0] a3, a2, a1, a0;  // inputs
 	input [3:0]   s; // one-hot select
-	output[k-1:0] b;
-	assign b = ({k{s[3]}} & a3) | 
+	output[15:0] mux4_out;
+	assign mux4_out = ({k{s[3]}} & a3) | 
 				({k{s[2]}} & a2) | 
 				({k{s[1]}} & a1) |
-				({k{s[0]}} & a0) ;
+				({k{s[0]}} & a0);
 endmodule
 
 //D-Flip-Flop
-module DFF(clk, in, out);
-	parameter n = 1;
+module DFF16(clk, in, dff_out);
 	input clk;
-	input [n-1:0] in;
-	output [n-1:0] out;
-	reg [n-1:0] out;
+	input[15:0] in;
+	output[15:0] dff_out;
+	reg[15:0] dff_out;
 	
-	always @(clk, in, out) begin
-	if(clk == 1)
-	begin
-		out = in;
+	always @(posedge clk) begin
+		begin
+			dff_out = in;
+		end
 	end
-	end
+endmodule
+
+module DFF2(clk, in, dff_out);
+	input clk;
+	input[31:0] in;
+	output[31:0] dff_out;
+	reg[31:0] dff_out;
 	
+	always @(posedge clk) begin
+		begin
+			dff_out = in;
+		end
+	end
 endmodule
 
 //ADDERS
-module Add_half (input a, b, output c_out, sum);
-	xor G1(sum, a, b);	// Gate instance names are optional
-	and G2(c_out, a, b);
+module ADD_HALF (input x, y, output c_out, sum);
+	xor G1(sum, x, y);	// Gate instance names are optional
+	and G2(c_out, x, y);
 endmodule
 //-----------------------------------------------------------------------------
-module Add_full (input a, b, c_in, output c_out, sum);	 
+module ADD_FULL (input a, b, c_in, output c_out, sum);	 
 	wire w1, w2, w3;				// w1 is c_out; w2 is sum
-	Add_half M1 (a, b, w1, w2);
-	Add_half M0 (w2, c_in, w3, sum);
+	ADD_HALF M1 (a, b, w1, w2);
+	ADD_HALF M0 (w2, c_in, w3, sum);
 	or (c_out, w1, w3);
 endmodule
 //-----------------------------------------------------------------------------
-module Add_rca_4 (input [3:0] a, b, input c_in, output c_out, output [3:0] sum);
+module ADD_4 (input [3:0] a, b, input c_in, output c_out, output [3:0] sum);
 	wire c_in1, c_in2, c_in3, c_in4;			// Intermediate carries
-	Add_full M0 (a[0], b[0], c_in,  c_in1, sum[0]);
-	Add_full M1 (a[1], b[1], c_in1, c_in2, sum[1]);
-	Add_full M2 (a[2], b[2], c_in2, c_in3, sum[2]);
-	Add_full M3 (a[3], b[3], c_in3, c_out, sum[3]);
+	ADD_FULL M0 (a[0], b[0], c_in,  c_in1, sum[0]);
+	ADD_FULL M1 (a[1], b[1], c_in1, c_in2, sum[1]);
+	ADD_FULL M2 (a[2], b[2], c_in2, c_in3, sum[2]);
+	ADD_FULL M3 (a[3], b[3], c_in3, c_out, sum[3]);
 endmodule
 //-----------------------------------------------------------------------------
-module Add_rca_8 (input [7:0] a, b, input c_in, output c_out, output [7:0] sum);
+module ADD_8 (input [7:0] a, b, input c_in, output c_out, output [7:0] sum);
 	wire c_in4;
-	Add_rca_4 M0 (a[3:0], b[3:0], c_in, c_in4, sum[3:0]);
-	Add_rca_4 M1 (a[7:4], b[7:4], c_in4, c_out, sum[7:4]);
+	ADD_4 M0 (a[3:0], b[3:0], c_in, c_in4, sum[3:0]);
+	ADD_4 M1 (a[7:4], b[7:4], c_in4, c_out, sum[7:4]);
+endmodule
+//-----------------------------------------------------------------------------
+module ADD (input [15:0] a, b, input c_in, output c_out, output [15:0] sum);
+   wire c_in4;
+   ADD_8 M0 (a[7:0], b[7:0], c_in, c_in4, sum[7:0]);
+   ADD_8 M1 (a[15:8], b[15:8], c_in4, c_out, sum[15:8]);
 endmodule
 
-module AND16(x,y,z);
+
+module AND(x,y,z);
 	input[15:0] x,y;          
 	output[15:0] z;    
  
 	assign z = x & y;
 endmodule
  
-module NAND16(x,y,z);
+module NAND(x,y,z);
 	input[15:0] x,y;          
 	output[15:0] z;    
    
@@ -114,7 +130,74 @@ module SHIFT_RIGHT(shift, in, out);
  
 	assign out = in >> shift;
 endmodule
- 
+   
+module OR(a, b, c);
+	parameter n = 16;
+	input[n-1:0] a, b;
+	output[n-1:0] c;
+
+	assign c = a | b;
+endmodule
+
+module NOR(a, b, c);
+	parameter n = 16;
+	input[n-1:0] a, b;
+	output[n-1:0] c;
+	
+	assign c = ~(a | b);
+endmodule
+
+module MUX2(a1, a0, s, b);
+	parameter k = 16;
+	input [k-1:0] a1, a0;
+	input [1:0] s;
+	output[k-1:0] b;
+	assign b = ({k{s[1]}} & a1) |
+				({k{s[0]}} & a0);
+endmodule
+
+//-----------------------------------------------------------------------------
+module XOR(a, b, c);
+	input [15:0] a;
+	input [15:0] b;
+	output [15:0] c;
+	assign c = a ^ b;
+endmodule
+
+//-----------------------------------------------------------------------------
+module XNOR(a, b, c);
+	input [15:0] a;
+	input [15:0] b;
+	output [15:0] c;
+	assign c = ~(a ^ b);
+endmodule
+
+
+module Input_registers(clk, a_in, b_in, acc_val, a_s, b_s, a_out, b_out);
+	parameter n = 16;
+	
+	input clk;
+	
+	//inputs and outputs to the entire section
+	input [n-1:0] a_in, b_in, acc_val;	//a&b and current accumulator value
+	input [1:0] a_s;		//2 bit one-hot selector
+	input [3:0] b_s;		//4 bit one-hot selector
+	output [n-1:0] a_out, b_out;
+	
+	
+	//wires
+	wire [n-1:0] muxA_out;
+	wire [n-1:0] muxB_out;
+	wire [n-1:0] a_out, b_out;
+	
+	//module instantiations for the two muxes and two d flip-flops
+	MUX2 #(n) muxA(a_in, a_out, a_s, muxA_out);
+	MUX4 #(n) muxB(16'b0000000000000000, b_in, acc_val, b_out, b_s, muxB_out);
+	DFF16  #(n) selectedA(clk, muxA_out, a_out);
+	DFF16  #(n) selectedB(clk, muxB_out, b_out);
+endmodule
+
+
 module testbench();
  
 	reg [15:0] one;
@@ -124,9 +207,9 @@ module testbench();
 	wire [15:0] out2;
 	wire [15:0] out3;
 	
-	Xor testXor(one, two, out1);
-	Xnor testXnor(one, two, out2);
-	Shift_right testShiftRight(one, three, out3);
+	XOR testXor(one, two, out1);
+	XNOR testXnor(one, two, out2);
+	SHIFT_RIGHT testShiftRight(one, three, out3);
 
 	// Inputs
 	reg[15:0]       in;
@@ -144,8 +227,8 @@ module testbench();
 	wire[15:0]      shifted;
    
 	SHIFT_LEFT sL (shift, in, shifted);
-	AND16 anding(x,y, andres);
-	NAND16 nanding(x,y, nandres);
+	AND anding(x,y, andres);
+	NAND nanding(x,y, nandres);
 	initial begin
 	   
 		a = 3;
@@ -203,82 +286,4 @@ module testbench();
 		end
 	end
 
-endmodule
-   
-
-//OR
-module my_OR(a, b, output c);
-	parameter n = 16;
-	input[n-1:0] a, b;
-	output[n-1]:0] c;
-
-	assign c = a | b;
-endmodule
-
-//NOR
-module my_NOR(input a, b, output c);
-	parameter n = 16;
-	input[n-1:0] a, b;
-	output[n-1]:0] c;
-	
-	assign c = ~(a | b);
-endmodule
-
-//Multiplexer (2 channel)
-module Mux2(a1, a0, s, b);
-	parameter k = 16;
-	input [k-1:0] a1, a0;
-	input [1:0] s;
-	output[k-1:0] b;
-	assign b = ({k{s[1]}} & a1) |
-				({k{s[0]}} & a0);
-endmodule
-
-//-----------------------------------------------------------------------------
-module Xor(a, b, c);
-	input [15:0] a;
-	input [15:0] b;
-	output [15:0] c;
-	assign c = a ^ b;
-endmodule
-
-//-----------------------------------------------------------------------------
-module Xnor(a, b, c);
-	input [15:0] a;
-	input [15:0] b;
-	output [15:0] c;
-	assign c = ~(a ^ b);
-endmodule
-
-//-----------------------------------------------------------------------------
-module Shift_right(in, amt, out);
-	input [15:0] in;
-	input [4:0] amt;
-	output [15:0] out;
-	wire [15:0] out;
-	assign out = in >> amt;
-endmodule
-
-module Input_registers(clk, a_in, b_in, acc_val, a_s, b_s, a_out, b_out);
-	parameter n = 16;
-	
-	input clk;
-	
-	//inputs and outputs to the entire section
-	input [n-1:0] a_in, b_in, acc_val;	//a&b and current accumulator value
-	input [1:0] a_s;		//2 bit one-hot selector
-	input [3:0] b_s;		//4 bit one-hot selector
-	output [n-1:0] a_out, b_out;
-	
-	
-	//wires
-	wire [n-1:0] muxA_out;
-	wire [n-1:0] muxB_out;
-	wire [n-1:0] a_out, b_out;
-	
-	//module instantiations for the two muxes and two d flip-flops
-	Mux2 #(n) muxA(a_in, a_out, a_s, muxA_out);
-	Mux4 #(n) muxB(16'b0000000000000000, b_in, acc_val, b_out, b_s, muxB_out);
-	DFF  #(n) selectedA(clk, muxA_out, a_out);
-	DFF  #(n) selectedB(clk, muxB_out, b_out);
 endmodule
