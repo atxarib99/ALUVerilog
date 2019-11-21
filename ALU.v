@@ -12,11 +12,6 @@ module Mult_full(a, b, c);
 	output [15:0] c;
 
 	//develop circuitry for outputs
-	//  assign c[0] = (a[0] & b[0]);
-	//  assign c[1] = ((a[0] & b[1]) ^ (a[1] & b[0]));
-	//  assign c[2] = (((a[0] & b[1]) & (a[1] & b[0])) ^ (a[1] & b[1]));
-	//  assign c[3] = (((a[0] & b[1]) & a[1] & b[0]) & (a[1] & b[1]));
-
 	assign c = a * b;
 
 endmodule
@@ -30,8 +25,6 @@ module Divide_full(a, b, c);
 	output [15:0] c;
 
 	//because division is hard we use /
-	// assign c[0] = ((!b[1] & a[0]) | (a[1] & a[0]) | (!b[0] & a[1]));
-	// assign c[1] = (!b[1] & a[1]);
 	assign c = a / b;
 
 endmodule
