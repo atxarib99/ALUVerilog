@@ -217,11 +217,11 @@ module testbench();
 	wire[15:0]      shifted;
    
 	SHIFT_LEFT sL (shift, in, shifted);
-	AND16 anding(x, y, andres);
-	NAND16 nanding(x, y, nandres);
-	Xor testXor(x, y, xor_out);
-	Xnor testXnor(x, y, xnor_out);
-	Shift_right testShiftRight(x, three, shiftright_out);
+	AND anding(x, y, andres);
+	NAND nanding(x, y, nandres);
+	XOR testXor(x, y, xor_out);
+	XNOR testXnor(x, y, xnor_out);
+	SHIFT_RIGHT testShiftRight(three, x, shiftright_out);
 	initial begin
 	   
 		#10
