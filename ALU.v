@@ -200,43 +200,32 @@ endmodule
 
 module testbench();
  
-	reg [15:0] one;
-	reg [15:0] two;
-	reg [4:0] three;
-	wire [15:0] out1;
-	wire [15:0] out2;
-	wire [15:0] out3;
-	
-	XOR testXor(one, two, out1);
-	XNOR testXnor(one, two, out2);
-	SHIFT_RIGHT testShiftRight(one, three, out3);
-
 	// Inputs
 	reg[15:0]       in;
 	reg[4:0]        shift;
 	reg             clk;
-	reg[15:0]           x;
-	reg[15:0]           y;
-	reg[1:0]            a;
-	reg[1:0]            b;
-	wire[3:0]           out;
-	wire[15:0]          andres;
-	wire[15:0]          nandres;
+	reg[15:0]       x;
+	reg[15:0]       y;
+	reg [4:0] 		three;
+	wire[15:0]      andres;
+	wire[15:0]      nandres;
+	wire [15:0] 	xor_out;
+	wire [15:0] 	xnor_out;
+	wire [15:0] 	shiftright_out;
    
 	// Output from module
 	wire[15:0]      shifted;
    
 	SHIFT_LEFT sL (shift, in, shifted);
-	AND anding(x,y, andres);
-	NAND nanding(x,y, nandres);
+	AND16 anding(x, y, andres);
+	NAND16 nanding(x, y, nandres);
+	Xor testXor(x, y, xor_out);
+	Xnor testXnor(x, y, xnor_out);
+	Shift_right testShiftRight(x, three, shiftright_out);
 	initial begin
 	   
-		a = 3;
-		b = 3;
 		#10
-		$display("mult: %1b", out);
-	   
-	   
+	    
 	   x = 65535;
 	   y = 0;
 	   #10
@@ -261,16 +250,16 @@ module testbench();
 		#10
 		$finish;
 
-		one = 16'b0000000011111111;
-		 two = 16'b0000111100001111;
-		 three = 4'b0111;
+		x = 16'b0000000011111111;
+		y = 16'b0000111100001111;
+		three = 4'b0111;
 		 
-		 #10
-		 $display("    input 1     |     input 2    |     xor out     |    xnor out   |    shift out   ");
-		 $display("%15b|%15b|%15b|%15b|%15b", one, two, out1, out2, out3);
+		#10
+		$display("    input 1     |     input 2    |     xor out     |    xnor out   |    shift out   ");
+		$display("%15b|%15b|%15b|%15b|%15b", x, y, xor_out, xnor_out, shiftright_out);
 		 
-		 #10
-		 $finish;
+		#10
+		$finish;
 	end
    
 	//---------------------------------------------
