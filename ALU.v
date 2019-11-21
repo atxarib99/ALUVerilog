@@ -29,37 +29,38 @@ module ADD_8 (input [7:0] a, b, input c_in, output c_out, output [7:0] sum);
 	ADD_4 M1 (a[7:4], b[7:4], c_in4, c_out, sum[7:4]);
 endmodule
 
-module ADD (input [15:0] a, b, input c_in, output c_out, output [15:0] sum);
+module ADD (input [15:0] a, b, input c_in, output [31:0] sum);
    wire c_in4;
    ADD_8 M0 (a[7:0], b[7:0], c_in, c_in4, sum[7:0]);
    ADD_8 M1 (a[15:8], b[15:8], c_in4, c_out, sum[15:8]);
+   assign sum[16] = c_out;
+   assign sum[31:17] = 0;
 endmodule
 
 module MULTIPLY(x, y, mult_out);
 	input [15:0] x, y;
-	output [15:0] mult_out;
+	output [31:0] mult_out;
 
 	assign mult_out = x * y;
 endmodule
 
 module DIVIDE(x, y, div_out);
 	input [15:0] x, y;
-	output [15:0] div_out;
+	output [31:0] div_out;
 
 	assign div_out = x / y;
 endmodule
 
 module AND(x,y,z);
 	input[15:0] x,y;          
-	output[15:0] z;    
+	output[31:0] z;    
  
 	assign z = x & y;
 endmodule
 
 module OR(a, b, c);
-	parameter n = 16;
-	input[n-1:0] a, b;
-	output[n-1:0] c;
+	input[15:0] a, b;
+	output[31:0] c;
 
 	assign c = a | b;
 endmodule
@@ -67,28 +68,27 @@ endmodule
 module XOR(a, b, c);
 	input [15:0] a;
 	input [15:0] b;
-	output [15:0] c;
+	output [31:0] c;
 	assign c = a ^ b;
 endmodule
 
 module NOT(b, b_out);
     input[15:0] b;
-  output[15:0] b_out;
+	output[31:0] b_out;
 
-  assign b_out = ~b;
+	assign b_out = ~b;
 endmodule
 
 module NAND(x,y,z);
 	input[15:0] x,y;          
-	output[15:0] z;    
+	output[31:0] z;    
    
 	assign z = ~(x & y);
 endmodule
 
 module NOR(a, b, c);
-	parameter n = 16;
-	input[n-1:0] a, b;
-	output[n-1:0] c;
+	input[15:0] a, b;
+	output[31:0] c;
 	
 	assign c = ~(a | b);
 endmodule
@@ -96,31 +96,31 @@ endmodule
 module XNOR(a, b, c);
 	input [15:0] a;
 	input [15:0] b;
-	output [15:0] c;
+	output [31:0] c;
 	assign c = ~(a ^ b);
 endmodule
 
 module SHIFT_LEFT(shift, in, out);
-	input[4:0] shift;
+	input[15:0] shift;
 	input[15:0] in;
-	output[15:0] out;
+	output[31:0] out;
  
 	assign out = in << shift;
 endmodule
  
 module SHIFT_RIGHT(shift, in, out);
-	input[4:0] shift;
+	input[15:0] shift;
 	input[15:0] in;
-	output[15:0] out;
+	output[31:0] out;
  
 	assign out = in >> shift;
 endmodule
 
 module MUX2(a1, a0, s, b);
 	parameter k = 16;
-	input [k-1:0] a1, a0;
+	input [15:0] a1, a0;
 	input [1:0] s;
-	output[k-1:0] b;
+	output[15:0] b;
 	assign b = ({k{s[1]}} & a1) |
 				({k{s[0]}} & a0);
 endmodule
@@ -162,39 +162,14 @@ module DFF32(clk, in, dff_out);
 	end
 endmodule
 
-
-module Input_registers(clk, a_in, b_in, acc_val, a_s, b_s, a_out, b_out);
-	parameter n = 16;
-	
-	input clk;
-	
-	//inputs and outputs to the entire section
-	input [n-1:0] a_in, b_in, acc_val;	//a&b and current accumulator value
-	input [1:0] a_s;		//2 bit one-hot selector
-	input [3:0] b_s;		//4 bit one-hot selector
-	output [n-1:0] a_out, b_out;
-	
-	
-	//wires
-	wire [n-1:0] muxA_out;
-	wire [n-1:0] muxB_out;
-	wire [n-1:0] a_out, b_out;
-	
-	//module instantiations for the two muxes and two d flip-flops
-	MUX2 #(n) muxA(a_in, a_out, a_s, muxA_out);
-	MUX4 #(n) muxB(16'b0000000000000000, b_in, acc_val, b_out, b_s, muxB_out);
-	DFF16  #(n) selectedA(clk, muxA_out, a_out);
-	DFF16  #(n) selectedB(clk, muxB_out, b_out);
-endmodule
-
 module COMBINATIONAL_LOGIC (muxAInput, muxBInput, op, reset, aOut, bOut, m);
     input[1:0] muxAInput;
-    input[2:0] muxBInput;
+    input[3:0] muxBInput;
     input[3:0] op;
     input reset;
 
     output[1:0] aOut;
-    output[2:0] bOut;
+    output[3:0] bOut;
     output[15:0] m;
 
     wire[14:0] decodeOut;
@@ -234,11 +209,11 @@ endmodule
 module MUX16(add, sub, mult, div, andd, orr, xorr, nt, nandd, norr, xnorr, shiftL, shiftR, err, select, out);
 	parameter n = 32;
 	
-	input[32:0] add, sub, mult, div, andd, orr, xorr, nt, nandd, norr, xnorr, shiftL, shiftR, err;
-	input[n/2-1:0] select;
-	output[n-1:0] out;
+	input[31:0] 	mult, nt, nandd, add, sub, div, andd, orr, xorr, norr, xnorr, shiftL, shiftR, err;
+	input[15:0] 	select;
+	output[31:0] 	out;
 	
-	assign out = ({n{select[0]}} & add) |
+	assign out = (({n{select[0]}} & add))|
                 ({n{select[1]}} & sub) |
                 ({n{select[2]}} & mult) |
 				({n{select[3]}} & div) |
@@ -254,7 +229,35 @@ module MUX16(add, sub, mult, div, andd, orr, xorr, nt, nandd, norr, xnorr, shift
 				({n{select[13]}} & out) |
 				({n{select[14]}} & err) |
                 ({n{select[15]}} & 0);
-endmodule 
+endmodule
+
+module CURRENT_OP(opcode, operation);
+	input[15:0]		opcode;
+	output reg [8*12:1] 	operation;
+	
+	always @(opcode)
+    begin
+        case(opcode)
+        1 : operation = "Add";
+        2 : operation = "Subtract";
+        3 : operation = "Multiply";
+        4 : operation = "Divide";
+        5 : operation = "AND";
+        6 : operation = "OR";
+        7 : operation = "XOR";
+        8 : operation = "NOT";
+        9 : operation = "NAND";
+        10 : operation = "NOR";
+        11 : operation = "XNOR";
+        12 : operation = "Shift Left";
+        13 : operation = "Shift Right";
+        14 : operation = "No Op";
+        15 : operation = "Error";
+        15 : operation = "Reset";
+        default : operation = "WHAT";
+        endcase
+	end
+endmodule
 
 module testbench();
  
@@ -262,63 +265,80 @@ module testbench();
 	reg             clk;
 	reg             reset;
 	reg[1:0]		muxAInput;
-	reg[2:0]		muxBInput;
+	reg[3:0]		muxBInput;
 	reg[3:0]		op;
 	reg[15:0]       a;
 	reg[15:0]       b;
+	wire [8*12:1] 	operation;
 	
 	// Combinational Logic Output
 	wire[1:0]		muxASelector;
-	wire[2:0]		muxBSelector;
+	wire[3:0]		muxBSelector;
 	wire[15:0] 		opcode;
    
    
    // Operation Module Ouput
-	wire[15:0] 		add;
-	wire[15:0] 		sub;
-	wire[15:0] 		div;
-	wire[15:0] 		andd;
-	wire[15:0] 		orr;
-	wire[15:0] 		xorr;
-	wire[15:0] 		nt;
-	wire[15:0] 		nandd;
-	wire[15:0] 		norr;
-	wire[15:0] 		xnorr;
-	wire[15:0] 		shiftL;
-	wire[15:0] 		shiftR;
-	wire[15:0] 		err;
-	wire[31:0] 		mult;
+	wire[31:0] 		add_out;
+	wire[31:0] 		sub_out;
+	wire[31:0] 		div_out;
+	wire[31:0] 		and_out;
+	wire[31:0] 		or_out;
+	wire[31:0] 		xor_out;
+	wire[31:0] 		nt_out;
+	wire[31:0] 		nand_out;
+	wire[31:0] 		nor_out;
+	wire[31:0] 		xnor_out;
+	wire[31:0] 		shiftL_out;
+	wire[31:0] 		shiftR_out;
+	wire[31:0] 		err_out;
+	wire[31:0] 		mult_out;
+	wire[31:0] 		acc_val;
    
 	COMBINATIONAL_LOGIC CL(muxAInput, muxBInput, op, reset, muxASelector, muxBSelector, opcode);
-	ADD()
-	MUX16(add, sub, mult, div, andd, orr, xorr, nt, nandd, norr, xnorr, shiftL, shiftR, err, select, out);
-	
+	CURRENT_OP currentOP(opcode, operation);
 	//wires for input -> mux -> dff
     wire [15:0] muxA_out;
     wire [15:0] muxB_out;
     wire [15:0] a_out, b_out;
 
     //module instantiations for the two muxes and two d flip-flops
-    MUX2 #(n) muxA(a, a_out, muxASelector, muxA_out);
-    MUX4 #(n) muxB(16'b0000000000000000, b, acc_val, b_out, muxBSelector, muxB_out);
-    DFF16  #(n) selectedA(clk, muxA_out, a_out);
-    DFF16  #(n) selectedB(clk, muxB_out, b_out);
+    MUX2 muxA(a, a_out, muxASelector, muxA_out);
+    MUX4 muxB(16'b0, b, acc_val[15:0], b_out, muxBSelector, muxB_out);
+    DFF16  selectedA(clk, muxA_out, a_out);
+    DFF16  selectedB(clk, muxB_out, b_out);
 
   //a_out is output from DFF that should be used for modules
+
+	ADD adder(a_out, b_out, 1'b0, add_out);
+	DIVIDE divider(a_out, b_out, div_out);
+	AND ander(a_out, b_out, and_out);
+	OR orer(a_out, b_out, or_out);
+	XOR xorer(a_out, b_out, xor_out);
+	NOT noter(b_out, nt_out);
+	NAND nander(a_out, b_out, nand_out);
+	NOR norer(a_out, b_out, nor_out);
+	XNOR xnorer(a_out, b_out, xnor_out);
+    SHIFT_LEFT leftShifter(a_out, b_out, shiftL_out);
+    SHIFT_RIGHT rightShifter(a_out, b_out, shiftR_out);
+    MULTIPLY multiplier(a_out, b_out, mult_out);
+	
+	MUX16 outputResult(add_out, sub_out, mult_out, div_out, and_out, or_out, xor_out, nt_out, nand_out, nor_out, xnor_out, shiftL_out, shiftR_out, err_out, opcode, acc_val);
 
 	initial begin 
 		#1
 		
 		reset = 0;
-		a = 6;
-		b = 3;
-		muxAInput = 1;
-		muxBInput = 2;
+		a = 65535;
+		b = 1;
+		muxAInput = 2'b10;
+		muxBInput = 4'b0100;
 		
 		op = 0;
 		
 		#10
-		$display("opcode: %1b", opcode);
+		$display("NUM1\t\t\t\t||NUM2\t\t\t||Operation\t\t||Current State||Output\t\t\t\t\t\t||Next State");
+        $monitor("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||Current State||%b (%1d)\t||Next State", a_out, a_out, b_out, b_out, op, operation, acc_val, acc_val);
+		
 		
 		$finish;
 	end
@@ -329,9 +349,9 @@ module testbench();
 	initial begin
 		forever
 		begin
-			#10
+			#5
 			clk = 0 ;
-			#10
+			#5
 			clk = 1 ;
 		end
 	end
