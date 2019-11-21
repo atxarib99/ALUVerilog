@@ -197,6 +197,72 @@ module Input_registers(clk, a_in, b_in, acc_val, a_s, b_s, a_out, b_out);
 	DFF16  #(n) selectedB(clk, muxB_out, b_out);
 endmodule
 
+module COMBINATIONAL_LOGIC (a, b, c, r, aOut, bOut, m);
+    input[1:0] a;
+    input[2:0] b;
+    input[3:0] c;
+    input r;
+
+    output[1:0] aOut;
+    output[2:0] bOut;
+    output[15:0] m;
+
+    wire[14:0] decodeOut;
+    wire[15:0] leftArbOut;
+
+    assign aOut = a;
+    assign bOut = b;
+
+    DECODER decoding(c, decodeOut);
+    LEFT_ARBITER leftArbing(decodeOut, r, leftArbOut);
+
+    assign m = leftArbOut;
+endmodule
+
+
+module DECODER (c, d);
+    input[3:0] c;
+
+    output reg[14:0] d;
+
+    always @(c)
+    begin
+        case(c)
+        4'b0000 : d=15'b000000000000001;
+        4'b0001 : d=15'b000000000000010;
+        4'b0010 : d=15'b000000000000100;
+        4'b0011 : d=15'b000000000001000;
+        4'b0100 : d=15'b000000000010000;
+        4'b0101 : d=15'b000000000100000;
+        4'b0110 : d=15'b000000001000000;
+        4'b0111 : d=15'b000000010000000;
+        4'b1000 : d=15'b000000100000000;
+        4'b1001 : d=15'b000001000000000;
+        4'b1010 : d=15'b000010000000000;
+        4'b1011 : d=15'b000100000000000;
+        4'b1100 : d=15'b001000000000000;
+        4'b1101 : d=15'b010000000000000;
+        4'b1110 : d=15'b100000000000000;
+        default : d=15'bXXXXXXXXXXXXXXX;
+        endcase
+    end
+endmodule
+
+module LEFT_ARBITER (d, r, m);
+    input[14:0] d;
+    input r;
+
+    output reg[15:0] m;
+
+    always @(r)
+    begin
+        case(r)
+        1'b1 : m=1000000000000000;
+        1'b0 : m={r, d};
+        default : m=16'bXXXXXXXXXXXXXXXX;
+        endcase
+    end
+endmodule
 
 module testbench();
  
