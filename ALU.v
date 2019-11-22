@@ -387,7 +387,7 @@ module testbench();
 
 	initial begin 
 		$display("NUM1\t\t\t||NUM2\t\t\t||Operation\t\t||Current State ||Output\t\t\t\t\t||Next State");
-		$monitor("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
+		$monitor("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.muxA_out, breadboard.muxA_out, breadboard.muxB_out, breadboard.muxB_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
         #1
 		
 		// Start here
