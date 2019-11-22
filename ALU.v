@@ -310,7 +310,7 @@ module ALU(clk, reset, A, B, muxAInput, muxBInput, op, acc_val);
 	wire[31:0] 		and_out;
 	wire[31:0] 		or_out;
 	wire[31:0] 		xor_out;
-	wire[31:0] 		nt_out;
+	wire[31:0] 		not_out;
 	wire[31:0] 		nand_out;
 	wire[31:0] 		nor_out;
 	wire[31:0] 		xnor_out;
@@ -338,7 +338,7 @@ module ALU(clk, reset, A, B, muxAInput, muxBInput, op, acc_val);
 	AND ander(a_out, b_out, and_out);
 	OR orer(a_out, b_out, or_out);
 	XOR xorer(a_out, b_out, xor_out);
-	NOT noter(b_out, nt_out);
+	NOT noter(b_out, not_out);
 	NAND nander(a_out, b_out, nand_out);
 	NOR norer(a_out, b_out, nor_out);
 	XNOR xnorer(a_out, b_out, xnor_out);
@@ -346,7 +346,7 @@ module ALU(clk, reset, A, B, muxAInput, muxBInput, op, acc_val);
     SHIFT_RIGHT rightShifter(a_out, b_out, shiftR_out);
     MULTIPLY multiplier(a_out, b_out, mult_out);
 	
-	MUX16 outputResult(add_out, sub_out, mult_out, div_out, and_out, or_out, xor_out, nt_out, nand_out, nor_out, xnor_out, shiftL_out, shiftR_out, opcode, finalMux_out);
+	MUX16 outputResult(add_out, sub_out, mult_out, div_out, and_out, or_out, xor_out, not_out, nand_out, nor_out, xnor_out, shiftL_out, shiftR_out, opcode, finalMux_out);
 	DFF32 acc(clk, finalMux_out, acc_val);
 endmodule
 
