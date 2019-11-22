@@ -268,14 +268,14 @@ module CURRENT_OP(op, operation);
 	end
 endmodule
 
-module ALU(clk, reset, muxAInput, muxBInput, op, acc_val);
+module ALU(clk, reset, A, B, muxAInput, muxBInput, op, acc_val);
 	input             clk;
 	input             reset;
 	input[1:0]		muxAInput;
 	input[3:0]		muxBInput;
 	input[3:0]		op;
-	reg[15:0]       a;
-	reg[15:0]       b;
+	input[15:0]       A;
+	input[15:0]       B;
 	wire [8*12:1] 	operation;
 	reg [8*6:1] 	currentState = ""; // "Ready" or "Error"
 	reg [8*6:1] 	nextState = "";    //    ^    or    ^
@@ -310,8 +310,8 @@ module ALU(clk, reset, muxAInput, muxBInput, op, acc_val);
     wire [15:0] a_out, b_out;
 
     //module instantiations for the two muxes and two d flip-flops
-    MUX2 muxA(a, a_out, muxASelector, muxA_out);
-    MUX4 muxB(16'b0, b, acc_val[15:0], b_out, muxBSelector, muxB_out);
+    MUX2 muxA(A, a_out, muxASelector, muxA_out);
+    MUX4 muxB(16'b0, B, acc_val[15:0], b_out, muxBSelector, muxB_out);
     DFF16  selectedA(clk, muxA_out, a_out);
     DFF16  selectedB(clk, muxB_out, b_out);
 
@@ -336,16 +336,18 @@ module testbench();
  
 	reg             clk;
 	reg             reset;
+	reg[15:0]		A;
+	reg[15:0]		B;
 	reg[1:0]		muxAInput;
 	reg[3:0]		muxBInput;
 	reg[3:0]		op;
 	wire[31:0]		out;
-	wire[1:0] 		print;
+	reg[8*2:1] 	print = "";
 	 
 	//---------------------------------------------
 	// Breadboard
 	//---------------------------------------------  
-	ALU breadboard(clk, reset, muxAInput, muxBInput, op, out);
+	ALU breadboard(clk, reset, A, B, muxAInput, muxBInput, op, out);
 
 	// Combinational Logic Input
 	
@@ -384,55 +386,27 @@ module testbench();
 	end
 
 	initial begin 
-		#1
+		$display("NUM1\t\t\t||NUM2\t\t\t||Operation\t\t||Current State ||Output\t\t\t\t\t||Next State");
+		$monitor("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
+        #1
+		
+		// Start here
+		
 		reset = 0;
-		breadboard.a = 5;
-		breadboard.b = 4;
+		A = 5;
+		B = 6;
 		muxAInput = 2'b10;
 		muxBInput = 4'b0100;
-				
-		#10
-		$display("NUM1\t\t\t||NUM2\t\t\t||Operation\t\t||Current State ||Output\t\t\t\t\t||Next State");
-        //$monitor("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 		
 		
 		#10
 		op = 0;
-		$monitor("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 		#10
 		op = 1;
 		#10
-		op = 2;
-		#10
-		op = 3;
-		#10
-		op = 4;
-		#10
-		op = 5;
-		#10
-		op = 6;
-		#10
-		op = 7;
-		#10
-		op = 8;
-		#10
-		op = 9;
-		#10
-		op = 10;
-		#10
-		op = 11;
-		#10
-		breadboard.a = 1;
-		muxAInput = 2'b01;
-		#10
-		op = 12;
-		#10
-		op = 13;
-		#10
-		op = 14;
-		#10
-		op = 15;
-		
+
+		// End here
+
 		$finish;
 	end
 
