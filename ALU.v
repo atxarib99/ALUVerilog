@@ -279,8 +279,7 @@ module CURRENT_OP(op, operation);
         11: operation = "Shift Left";
         12: operation = "Shift Right";
         13: operation = "No Op";
-        14: operation = "Error";
-        15: operation = "Reset";
+        14: operation = "Reset";
         default : operation = "WHAT";
         endcase
 	end
@@ -446,7 +445,7 @@ module testbench();
 		#10
 
 		//reset
-		op = 15;
+		op = 14;
 		#10
 
 		//multiply something to accumulator (should still be 0)
@@ -468,7 +467,7 @@ module testbench();
 		#10
 
 		//reset
-		op = 15;
+		op = 14;
 		#10
 
 		//and two fairly large numbers
@@ -502,13 +501,13 @@ module testbench();
 		op = 10;
 		#10
 
-		//shift accumulator right to small number
-		A = 22;
+		//shift accumulator left to large number
+		A = 6;
 		op = 11;
 		#10
 		
-		//shift accumulator left to large number
-		A = 17;
+		//shift accumulator right to small number
+		A = 5;
 		op = 12;
 		#10
 
@@ -518,14 +517,13 @@ module testbench();
 		#10
 		#10
 
-		//force an error state
+		//reset to ready
 		op = 14;
 		#10
-
-		//reset to ready
-		op = 15;
+		
+		// no op
+		op = 13;
 		#10
-
 
 		// End here
 
