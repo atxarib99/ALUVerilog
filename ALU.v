@@ -29,13 +29,31 @@ module ADD_8 (input [7:0] a, b, input c_in, output c_out, output [7:0] sum);
 	ADD_4 M1 (a[7:4], b[7:4], c_in4, c_out, sum[7:4]);
 endmodule
 
-module ADD (input [15:0] a, b, input c_in, output [31:0] sum);
+module ADD (input [15:0] a, b, output [31:0] sum);
    wire c_in4;
-   ADD_8 M0 (a[7:0], b[7:0], c_in, c_in4, sum[7:0]);
+   ADD_8 M0 (a[7:0], b[7:0], 1'b0, c_in4, sum[7:0]);
    ADD_8 M1 (a[15:8], b[15:8], c_in4, c_out, sum[15:8]);
    assign sum[16] = c_out;
    assign sum[31:17] = 0;
 endmodule
+
+//module SUB (input [15:0] a, b, output [31:0] diff);
+//	wire c_in4;
+//	always @(a, b) 
+//	begin
+//		if (b > a)
+//		begin
+//			diff = 32'bX;
+//		end
+//		else 
+//		begin
+//			ADD_8 M3 (a[7:0], ~b[7:0], 1'b1, c_in4, diff[7:0]);
+//			ADD_8 M4 (a[15:8], ~b[15:8], c_in4, c_out, diff[15:8]);
+//			diff[16] = c_out;
+//			diff[31:17] = 0;
+//		end
+//	end
+//endmodule
 
 module SUB (input [15:0] a, b, output reg [31:0] out);
 	always @(a, b) begin
@@ -258,8 +276,8 @@ module CURRENT_OP(op, operation);
         8: operation = "NAND";
         9: operation = "NOR";
         10: operation = "XNOR";
-        11: operation = "Shift_L";
-        12: operation = "Shift_R";
+        11: operation = "Shift Left";
+        12: operation = "Shift Right";
         13: operation = "No Op";
         14: operation = "Error";
         15: operation = "Reset";
@@ -301,22 +319,21 @@ module ALU(clk, reset, A, B, muxAInput, muxBInput, op, acc_val);
 	wire[31:0] 		shiftR_out;
 	wire[31:0] 		mult_out;
 	output wire[31:0] 		acc_val;
-   
-	COMBINATIONAL_LOGIC CL(muxAInput, muxBInput, op, reset, muxASelector, muxBSelector, opcode);
-	CURRENT_OP currentOP(op, operation);
-	//wires for input -> mux -> dff
+  
     wire [15:0] muxA_out;
     wire [15:0] muxB_out;
     wire [15:0] a_out, b_out;
 	wire [31:0] finalMux_out;
 
-    //module instantiations for the two muxes and two d flip-flops
+	COMBINATIONAL_LOGIC CL(muxAInput, muxBInput, op, reset, muxASelector, muxBSelector, opcode);
+	CURRENT_OP currentOP(op, operation);
+	//module instantiations for the two muxes and two d flip-flops
     MUX2 muxA(A, a_out, muxASelector, muxA_out);
     MUX4 muxB(16'b0, B, acc_val[15:0], b_out, muxBSelector, muxB_out);
     DFF16  selectedA(clk, muxA_out, a_out);
     DFF16  selectedB(clk, muxB_out, b_out);
 
-	ADD adder(a_out, b_out, 1'b0, add_out);
+	ADD adder(a_out, b_out, add_out);
 	SUB subber(a_out, b_out, sub_out);
 	DIVIDE divider(a_out, b_out, div_out);
 	AND ander(a_out, b_out, and_out);
@@ -349,7 +366,7 @@ module testbench();
 	//---------------------------------------------
 	// Breadboard
 	//---------------------------------------------  
-	ALU breadboard(clk, reset, A, B, muxAInput, muxBInput, op, out);
+	ALU alu(clk, reset, A, B, muxAInput, muxBInput, op, out);
 
 	//---------------------------------------------
 	// Clock Control
@@ -370,26 +387,37 @@ module testbench();
 	always @(out)
 	begin
 		if (^out == 1'b0 || ^out == 1'b1)
-			breadboard.nextState = "Ready";
+			alu.nextState = "Ready";
 		else begin
-			breadboard.nextState = "Error";
+			alu.nextState = "Error";
 		end
 	end
 
 	always @(posedge clk)
 	begin
-		if (breadboard.nextState == "")
-			breadboard.currentState = "Ready";
+		if (alu.nextState == "")
+			alu.currentState = "Ready";
 		else
-			breadboard.currentState = breadboard.nextState;
+			alu.currentState = alu.nextState;
 	end
 
 	initial begin 
 		clk = 1;
 		#1
-		$display("NUM1\t\t\t||NUM2\t\t\t||Operation\t\t||Current State ||Output\t\t\t\t\t||Next State");
+		$display("|Clk|   Input A       | A     |   Input B        | B     | Op |  Operation |CurState|           Output                 |   Output   |NexState|");
+		$display("+---+-----------------+-------+------------------+-------+----+------------+--------+----------------------------------+------------+--------+");
+		//$display("NUM1\t\t\t||NUM2\t\t\t||Operation\t\t||Current State ||Output\t\t\t\t\t||Next State");
 		// Start here
 		
+		forever
+		begin
+			#10
+			$display("| %b |%b | %d | %b | %d | %d |%s| %s | %b | %d | %s |",clk,alu.a_out,alu.a_out,alu.b_out,alu.b_out,op,alu.operation,alu.currentState,out,out,alu.nextState);
+		end
+	end
+
+	initial begin
+		#1
 		reset = 0;
 		A = 5;
 		B = 6;
@@ -399,129 +427,104 @@ module testbench();
 		//start with adding two numbers
 		op = 0;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 		//add another number to accumulator
 		A = 42;
 		muxBInput = 4'b0010;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//subtract accumulator from number
 		A = 823;
 		op = 1;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//subtract to cause underflow
 		A = 12;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//try to add to a error state (proves error state cannot be overriden this way
 		op = 0;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//reset
 		op = 15;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//multiply something to accumulator (should still be 0)
 		op = 2;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//multiply two fairly large numbers
 		A = 2048;
 		B = 16;
 		muxBInput = 4'b0100;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//divide the numbers
 		op = 3;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//divide by 0
 		B = 0;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//reset
 		op = 15;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//and two fairly large numbers
 		A = 16'b100101101111010;
 		B = 16'b000110101101010;
 		op = 4;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//or something with accumulator
 		op = 5;
 		muxBInput = 4'b0010;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//xor something with accumulator 
 		op = 6;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//not accumulator
 		op = 7;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//nand accumulator
 		op = 8;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//nor something with accumulator 
 		op = 9;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//xnor something with accumulator
 		op = 10;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//shift accumulator right to small number
 		A = 22;
 		op = 11;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 		
 		//shift accumulator left to large number
 		A = 17;
 		op = 12;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//do no op a couple of times
 		op = 13;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//force an error state
 		op = 14;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 		//reset to ready
 		op = 15;
 		#10
-		$display("%16b (%1d)\t||%b (%1d)\t||%1d (%1s)\t\t||%s\t||%b (%1d)\t||%s%s", breadboard.a_out, breadboard.a_out, breadboard.b_out, breadboard.b_out, op, breadboard.operation, breadboard.currentState, out, out, breadboard.nextState, print);
 
 
 		// End here
