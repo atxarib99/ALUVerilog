@@ -350,7 +350,7 @@ module ALU(clk, reset, A, B, muxAInput, muxBInput, op, acc_val);
 	DFF32 acc(clk, finalMux_out, acc_val);
 endmodule
 
-module testbench();
+module TESTBENCH();
  
 	reg             clk;
 	reg             reset;
